@@ -12,6 +12,14 @@ export async function fetchSiteData(): Promise<SiteData> {
   const settings: Record<string, string> = {};
   for (const row of settingsRes.data ?? []) settings[row.key] = row.value;
 
+  // Merge settings saved via file store (server-side admin writes)
+  try {
+    const { getSiteSettings } = await import("./site-store.server");
+    Object.assign(settings, getSiteSettings());
+  } catch {
+    // Not running on server — file store not available
+  }
+
   const episodes = (episodesRes.data ?? []) as Episode[];
   const seasons = ((seasonsRes.data ?? []) as Omit<Season, "episodes">[]).map((season) => ({
     ...season,

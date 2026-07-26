@@ -31,11 +31,8 @@ export type EpisodeInput = {
 
 export async function saveSettingsRows(entries: { key: string; value: string }[]) {
   await requireAdmin();
-  const { error } = await supabaseAdmin
-    .from("site_settings")
-    .upsert(entries.map((e) => ({ key: e.key, value: e.value })), { onConflict: "key" });
-  if (error) throw new Error(error.message);
-  return { ok: true as const };
+  const { saveSiteSettings } = await import("./site-store.server");
+  return saveSiteSettings(entries);
 }
 
 export async function saveShowRow(input: ShowInput) {
