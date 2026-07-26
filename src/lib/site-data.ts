@@ -1,7 +1,9 @@
-import { supabase } from "@/integrations/supabase/client";
+import { createServerFn } from "@tanstack/react-start";
 import type { Episode, Season, Show, SiteData } from "./site-types";
 
-export async function fetchSiteData(): Promise<SiteData> {
+export const fetchSiteData = createServerFn({ method: "GET" }).handler(async (): Promise<SiteData> => {
+  const { supabase } = await import("@/integrations/supabase/client");
+
   const [settingsRes, showsRes, seasonsRes, episodesRes] = await Promise.all([
     supabase.from("site_settings").select("key, value"),
     supabase.from("shows").select("*").order("sort_order").order("created_at"),
@@ -12,13 +14,9 @@ export async function fetchSiteData(): Promise<SiteData> {
   const settings: Record<string, string> = {};
   for (const row of settingsRes.data ?? []) settings[row.key] = row.value;
 
-  // Merge settings saved via file store (server-side admin writes)
-  try {
-    const { getSiteSettings } = await import("./site-store.server");
-    Object.assign(settings, getSiteSettings());
-  } catch {
-    // Not running on server — file store not available
-  }
+  // Merge settings saved via local file store (admin-side writes)
+  const { getSiteSettings } = await import("./site-store.server");
+  Object.assign(settings, getSiteSettings());
 
   const episodes = (episodesRes.data ?? []) as Episode[];
   const seasons = ((seasonsRes.data ?? []) as Omit<Season, "episodes">[]).map((season) => ({
@@ -34,9 +32,10 @@ export async function fetchSiteData(): Promise<SiteData> {
   }));
 
   return { settings, shows };
-}
+});
 
 export const siteQueryOptions = {
   queryKey: ["site-data"],
-  queryFn: fetchSiteData,
+  queryFn: () => fetchSiteData(),
+  staleTime: 30_000,
 };
