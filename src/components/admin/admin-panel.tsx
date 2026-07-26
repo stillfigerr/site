@@ -12,6 +12,7 @@ import {
 } from "@/lib/admin.functions";
 import { siteQueryOptions } from "@/lib/site-data";
 import { AnnouncementAdmin } from "@/components/admin/announcement-admin";
+import { AdminFAQ } from "@/components/admin/admin-faq";
 import { SETTING_FIELDS, type Show } from "@/lib/site-types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,6 +48,9 @@ export function AdminPanel({
             <TabsTrigger value="text" className="flex-1">
               Site text
             </TabsTrigger>
+            <TabsTrigger value="faq" className="flex-1">
+              FAQ
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="shows" className="mt-6">
             <ShowsAdmin shows={data?.shows ?? []} />
@@ -56,6 +60,9 @@ export function AdminPanel({
           </TabsContent>
           <TabsContent value="text" className="mt-6">
             <SettingsAdmin settings={data?.settings ?? {}} />
+          </TabsContent>
+          <TabsContent value="faq" className="mt-6">
+            <AdminFAQ />
           </TabsContent>
         </Tabs>
       </SheetContent>

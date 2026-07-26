@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { randomUUID } from "node:crypto";
 
 const showSchema = z.object({
   id: z.string().uuid().optional(),
@@ -99,3 +100,53 @@ export const deleteItem = createServerFn({ method: "POST" })
     const { deleteRow } = await import("./admin-content.server");
     return deleteRow(data.table, data.id);
   });
+
+// ---- FAQ CRUD ----
+
+const faqEntrySchema = z.object({
+  question: z.string().trim().min(1).max(500),
+  answer: z.string().trim().min(1).max(4000),
+});
+
+export const faqSave = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ id: z.string().uuid().optional(), ...faqEntrySchema.shape }).parse(data))
+  .handler(async ({ data }) => {
+    const { getSiteSettings, saveSiteSettings } = await import("./site-store.server");
+    const { requireAdmin } = await import("./admin-session.server");
+    await requireAdmin();
+
+    const raw = getSiteSettings().faqs ?? "[]";
+    const faqs: { id: string; question: string; answer: string }[] = JSON.parse(raw);
+
+    if (data.id) {
+      const idx = faqs.findIndex((f) => f.id === data.id);
+      if (idx === -1) throw new Error("FAQ not found");
+      faqs[idx] = { id: data.id, question: data.question, answer: data.answer };
+    } else {
+      faqs.push({ id: randomUUID(), question: data.question, answer: data.answer });
+    }
+
+    saveSiteSettings([{ key: "faqs", value: JSON.stringify(faqs) }]);
+    return { ok: true as const };
+  });
+
+export const faqDelete = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data }) => {
+    const { getSiteSettings, saveSiteSettings } = await import("./site-store.server");
+    const { requireAdmin } = await import("./admin-session.server");
+    await requireAdmin();
+
+    const raw = getSiteSettings().faqs ?? "[]";
+    const faqs: { id: string; question: string; answer: string }[] = JSON.parse(raw);
+    const filtered = faqs.filter((f) => f.id !== data.id);
+
+    saveSiteSettings([{ key: "faqs", value: JSON.stringify(filtered) }]);
+    return { ok: true as const };
+  });
+
+export const faqList = createServerFn({ method: "GET" }).handler(async () => {
+  const { getSiteSettings } = await import("./site-store.server");
+  const raw = getSiteSettings().faqs ?? "[]";
+  return JSON.parse(raw) as { id: string; question: string; answer: string }[];
+});

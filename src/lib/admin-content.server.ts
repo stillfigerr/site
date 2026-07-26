@@ -1,5 +1,10 @@
 import { requireAdmin } from "./admin-session.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import {
+  saveLocalShow,
+  deleteLocalRow,
+  saveLocalSeason,
+  saveLocalEpisode,
+} from "./site-store.server";
 
 export type ShowInput = {
   id?: string;
@@ -37,67 +42,20 @@ export async function saveSettingsRows(entries: { key: string; value: string }[]
 
 export async function saveShowRow(input: ShowInput) {
   await requireAdmin();
-  const payload = {
-    title: input.title,
-    tagline: input.tagline ?? null,
-    description: input.description ?? null,
-    icon_url: input.icon_url ?? null,
-    status: input.status ?? "Streaming now",
-    featured: input.featured ?? false,
-    sort_order: input.sort_order ?? 0,
-  };
-  if (input.id) {
-    const { error } = await supabaseAdmin.from("shows").update(payload).eq("id", input.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, id: input.id };
-  }
-  const { data, error } = await supabaseAdmin.from("shows").insert(payload).select("id").single();
-  if (error) throw new Error(error.message);
-  return { ok: true as const, id: data.id };
+  return saveLocalShow(input);
 }
 
 export async function deleteRow(table: "shows" | "seasons" | "episodes", id: string) {
   await requireAdmin();
-  const { error } = await supabaseAdmin.from(table).delete().eq("id", id);
-  if (error) throw new Error(error.message);
-  return { ok: true as const };
+  return deleteLocalRow(table, id);
 }
 
 export async function saveSeasonRow(input: SeasonInput) {
   await requireAdmin();
-  const payload = {
-    show_id: input.show_id,
-    number: input.number,
-    title: input.title ?? null,
-    sort_order: input.number,
-  };
-  if (input.id) {
-    const { error } = await supabaseAdmin.from("seasons").update(payload).eq("id", input.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, id: input.id };
-  }
-  const { data, error } = await supabaseAdmin.from("seasons").insert(payload).select("id").single();
-  if (error) throw new Error(error.message);
-  return { ok: true as const, id: data.id };
+  return saveLocalSeason(input);
 }
 
 export async function saveEpisodeRow(input: EpisodeInput) {
   await requireAdmin();
-  const payload = {
-    season_id: input.season_id,
-    number: input.number,
-    title: input.title,
-    description: input.description ?? null,
-    youtube_url: input.youtube_url ?? null,
-    duration: input.duration ?? null,
-    sort_order: input.number,
-  };
-  if (input.id) {
-    const { error } = await supabaseAdmin.from("episodes").update(payload).eq("id", input.id);
-    if (error) throw new Error(error.message);
-    return { ok: true as const, id: input.id };
-  }
-  const { data, error } = await supabaseAdmin.from("episodes").insert(payload).select("id").single();
-  if (error) throw new Error(error.message);
-  return { ok: true as const, id: data.id };
+  return saveLocalEpisode(input);
 }
