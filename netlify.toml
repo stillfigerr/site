@@ -1,0 +1,11 @@
+[build]
+  command = "npm install --legacy-peer-deps && npm run build"
+  publish = ".output/public"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+  VITE_SUPABASE_URL = "https://hsazkfxauracnxehuonm.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6YsrpGwcIQK4qs0eJaT_BA_2agadh71"
+  SUPABASE_URL = "https://hsazkfxauracnxehuonm.supabase.co"
+  SUPABASE_PUBLISHABLE_KEY = "sb_publishable_6YsrpGwcIQK4qs0eJaT_BA_2agadh71"
